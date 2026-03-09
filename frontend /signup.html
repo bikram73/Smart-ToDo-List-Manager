@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart To-Do | Sign Up</title>
+    <link rel="icon" href="https://img.icons8.com/fluency/48/todo-list.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <div class="card auth-card">
+        <h3 class="text-center mb-4">Create An Account For <span class="text-glow-primary">Smart To-Do List</span></h3>
+        <form id="signupForm">
+            <div class="mb-3">
+                <label class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email address</label>
+                <input type="email" class="form-control" id="email" required>
+                <div class="form-text text-muted small"><i class="fas fa-info-circle me-1"></i>Please enter a valid <strong>@gmail.com</strong> address to receive notifications.</div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <div class="input-group">
+                    <input type="password" class="form-control" id="password" required>
+                    <button class="btn btn-outline-primary" type="button" onclick="togglePassword('password', this)"><i class="fas fa-eye"></i></button>
+                </div>
+                <div class="form-text text-muted small"><i class="fas fa-info-circle me-1"></i>Password must be at least <strong>10 characters</strong> long.</div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Confirm Password</label>
+                <div class="input-group">
+                    <input type="password" class="form-control" id="confirmPassword" required>
+                    <button class="btn btn-outline-primary" type="button" onclick="togglePassword('confirmPassword', this)"><i class="fas fa-eye"></i></button>
+                </div>
+                <div class="form-text text-muted small"><i class="fas fa-info-circle me-1"></i>Both passwords must match.</div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Sign Up</button>
+        </form>
+        <div class="mt-3 text-center">
+            <small>Already have an account? <a href="login.html">Login</a></small>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = "password";
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Toast Notification Logic
+        function showToast(message, type = 'primary') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `custom-toast ${type}`;
+            
+            let icon = '<i class="fas fa-info-circle"></i>';
+            if (type === 'success') icon = '<i class="fas fa-check-circle text-success"></i>';
+            if (type === 'danger') icon = '<i class="fas fa-exclamation-circle text-danger"></i>';
+            
+            toast.innerHTML = `${icon} <span>${message}</span>`;
+            container.appendChild(toast);
+            
+            requestAnimationFrame(() => toast.classList.add('show'));
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if(password !== confirmPassword) {
+                showToast("Passwords do not match!", 'danger');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    const data = await response.json();
+                    if (response.ok) {
+                        showToast('Account created! Redirecting...', 'success');
+                        setTimeout(() => window.location.href = 'login.html', 1500);
+                    } else {
+                        showToast(data.detail || 'Signup failed', 'danger');
+                    }
+                } else {
+                    showToast(`Server Error: ${response.status} ${response.statusText}. Check Vercel Logs.`, 'danger');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast(`Error: ${error.message}. Check console/logs.`, 'danger');
+            }
+        });
+    </script>
+</body>
+</html>
